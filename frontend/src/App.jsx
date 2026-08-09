@@ -6,6 +6,7 @@ import ListingDetail from './pages/ListingDetail'
 import Listings from './pages/Listings'
 import Login from './pages/Login'
 import Negotiations from './pages/Negotiations'
+import Integrations from './pages/Integrations'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/negotiations" element={<Negotiations />} />
         <Route path="/negotiations/:id" element={<Negotiations />} />
         <Route path="/deals" element={<Deals />} />
+        <Route path="/integrations" element={<Integrations />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

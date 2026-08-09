@@ -244,3 +244,41 @@ class PipelineStage(TimestampedModel, table=True):
     order_index: int = Field(index=True)
     color: str = Field(default="#2563eb", max_length=20)
     is_terminal: bool = Field(default=False)
+
+
+class SearchProfile(TimestampedModel, table=True):
+    """Постоянный профиль поиска, которым пользуются агенты-скауты."""
+
+    __tablename__ = "search_profiles"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(default="Юг Московской области", max_length=255)
+    districts: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    min_price: int = Field(default=700000, ge=0)
+    max_price: int = Field(default=5000000, gt=0)
+    min_area: float = Field(default=6, gt=0)
+    max_area: float = Field(default=30, gt=0)
+    min_discount: float = Field(default=12, ge=0)
+    land_use: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    exclude_words: list[str] = Field(
+        default_factory=list, sa_column=Column(JSON, nullable=False)
+    )
+    is_active: bool = Field(default=True)
+
+
+class IntegrationRun(TimestampedModel, table=True):
+    """Журнал запусков автоматизации и аудит решений агентов."""
+
+    __tablename__ = "integration_runs"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    profile_id: Optional[int] = Field(default=None, foreign_key="search_profiles.id")
+    status: str = Field(default="completed", max_length=50)
+    imported_count: int = Field(default=0, ge=0)
+    qualified_count: int = Field(default=0, ge=0)
+    duplicates_count: int = Field(default=0, ge=0)
+    review_count: int = Field(default=0, ge=0)
+    actor: str = Field(default="system", max_length=100)
+    details: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
