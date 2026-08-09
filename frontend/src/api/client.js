@@ -50,6 +50,17 @@ export const getListing = (id) => {
 
 export const getDeals = () => (DEMO_MODE ? delay(demoDeals) : api('/deals'))
 
+export const getIntegrationsOverview = () =>
+  DEMO_MODE ? delay(null) : api('/integrations/overview')
+
+export const saveSearchProfile = (profile) =>
+  DEMO_MODE ? delay(profile) : api('/integrations/profile', {
+    method: 'PUT', body: JSON.stringify(profile)
+  })
+
+export const runIntegrationSearch = () =>
+  DEMO_MODE ? delay(null, 900) : api('/integrations/run', { method: 'POST' })
+
 export const getNegotiations = () =>
   DEMO_MODE ? delay(getDemoNegotiations()) : api('/negotiation')
 
