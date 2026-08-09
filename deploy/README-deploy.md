@@ -43,3 +43,19 @@ docker compose -f deploy/docker-compose.yml exec backend alembic upgrade head
 ```
 
 Сделайте резервную копию PostgreSQL перед миграциями: `docker compose -f deploy/docker-compose.yml exec -T db pg_dump -U yurzil yurzil_crm > backup.sql`.
+
+## 6. Автоматический деплой из GitHub Actions
+
+Workflow «Деплой на VPS» запускается после push в `main`. В настройках репозитория
+**Settings → Secrets and variables → Actions** обязательно создайте секреты:
+
+- `VPS_HOST` — IP-адрес или домен VPS;
+- `VPS_USER` — пользователь с доступом к Docker;
+- `VPS_SSH_KEY` — приватный SSH-ключ этого пользователя;
+- `VPS_PROJECT_PATH` — абсолютный путь к клону проекта на сервере;
+- `VPS_PORT` — SSH-порт (необязательно, по умолчанию 22).
+
+Перед первым автоматическим деплоем вручную клонируйте репозиторий в
+`VPS_PROJECT_PATH` и создайте там `.env`. Workflow проверяет секреты, наличие
+`.env`, применяет миграции отдельным контейнером и завершится ошибкой, если
+`/health` не отвечает после обновления.
