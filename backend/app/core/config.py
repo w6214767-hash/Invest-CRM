@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"
-    project_name: str = "ЮрЖил Avito CRM"
+    project_name: str = "Invest-CRM"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite:///./yurzil_crm.db"
     secret_key: str = "локальный-небоевой-секрет-замените-его"

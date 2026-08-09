@@ -7,6 +7,7 @@ from app.api.routes import (
     auth,
     deals,
     listings,
+    integrations,
     negotiation,
     offers,
     sellers,
@@ -22,3 +23,4 @@ api_router.include_router(offers.router)
 api_router.include_router(negotiation.router)
 api_router.include_router(webhooks.router)
 api_router.include_router(analytics.router)
+api_router.include_router(integrations.router)

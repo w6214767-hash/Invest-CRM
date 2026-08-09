@@ -15,6 +15,7 @@ venv/
 # Node.js
 frontend/node_modules/
 frontend/dist/
+frontend/artifacts/
 
 # IDE и ОС
 .vscode/
