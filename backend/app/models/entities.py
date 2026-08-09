@@ -172,6 +172,7 @@ class Message(TimestampedModel, table=True):
     direction: str = Field(max_length=20)
     body: str
     sent_by_human: bool = Field(default=False)
+    is_read: bool = Field(default=False)
     sent_at: datetime = Field(default_factory=datetime.utcnow)
 
 

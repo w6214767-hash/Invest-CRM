@@ -1,7 +1,7 @@
 """Pydantic-схемы для входных и выходных данных REST API."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -224,6 +224,104 @@ class NegotiationResult(BaseModel):
     escalated: bool
     escalation_reasons: list[str]
     draft_message: Optional[str] = None
+
+
+class NegotiationMessagePreview(BaseModel):
+    """Последнее сообщение, выводимое в строке списка переговоров."""
+
+    body: str
+    sent_at: datetime
+
+
+class NegotiationListItem(BaseModel):
+    """Краткое представление активного диалога с продавцом."""
+
+    listing_id: int
+    title: str
+    district: Optional[str] = None
+    price_rub: int
+    discount_pct: Optional[float] = None
+    score: Optional[float] = None
+    stage: NegotiationStage
+    seller_name: Optional[str] = None
+    last_message: Optional[NegotiationMessagePreview] = None
+    unread_count: int = 0
+    escalated: bool = False
+
+
+class NegotiationListingSummary(BaseModel):
+    """Короткая карточка участка в шапке диалога."""
+
+    id: int
+    title: str
+    district: Optional[str] = None
+    price_rub: int
+    discount_pct: Optional[float] = None
+    score: Optional[float] = None
+
+
+class NegotiationSellerSummary(BaseModel):
+    """Данные продавца, необходимые менеджеру в диалоге."""
+
+    name: Optional[str] = None
+    seller_type: SellerType = SellerType.UNKNOWN
+    urgency_score: float = 0
+
+
+class NegotiationMessageRead(BaseModel):
+    """Сообщение в ленте переговоров."""
+
+    id: int
+    direction: str
+    body: str
+    sent_at: datetime
+    sent_by_human: bool
+
+
+class NegotiationEventRead(BaseModel):
+    """Запись аудита перехода между стадиями переговоров."""
+
+    id: int
+    from_stage: NegotiationStage
+    to_stage: NegotiationStage
+    reason: str
+    actor: str
+    escalation_reasons: list[str] = Field(default_factory=list)
+    created_at: datetime
+
+
+class NegotiationDetail(BaseModel):
+    """Полный набор данных для страницы переговоров."""
+
+    listing: NegotiationListingSummary
+    seller: NegotiationSellerSummary
+    messages: list[NegotiationMessageRead] = Field(default_factory=list)
+    events: list[NegotiationEventRead] = Field(default_factory=list)
+    stage: NegotiationStage
+    allowed_next_actions: list[NegotiationStage] = Field(default_factory=list)
+    escalated: bool = False
+    escalation_reasons: list[str] = Field(default_factory=list)
+
+
+class NegotiationDraftRequest(BaseModel):
+    """Необязательный сценарий для подготовки следующего сообщения."""
+
+    intent: Optional[
+        Literal["first_contact", "facts", "motivation", "bargain_test"]
+    ] = None
+
+
+class NegotiationDraftResponse(BaseModel):
+    """Черновик сообщения и текст инструкции, по которой он получен."""
+
+    draft_message: str
+    prompt_used: str
+
+
+class NegotiationMessageCreate(BaseModel):
+    """Исходящее сообщение менеджера."""
+
+    body: str = Field(min_length=1, max_length=10_000)
 
 
 class DashboardMetrics(BaseModel):

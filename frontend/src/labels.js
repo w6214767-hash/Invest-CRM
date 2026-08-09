@@ -20,6 +20,17 @@ export const listingStatusLabels = {
   rejected: 'Отклонён'
 }
 
+export const negotiationActionLabels = {
+  start: 'Старт работы по лоту',
+  send_first_message: 'Отправлено первое сообщение',
+  incoming_message: 'Получен ответ продавца',
+  start_bargain: 'Начат торг',
+  prepare_offer: 'Подготовлен оффер',
+  archive: 'Диалог архивирован',
+  manager_resume: 'Менеджер вернул в работу',
+  manager_escalate: 'Ручная эскалация менеджера'
+}
+
 export const dealStageLabels = {
   lead: 'Лид',
   qualification: 'Квалификация',

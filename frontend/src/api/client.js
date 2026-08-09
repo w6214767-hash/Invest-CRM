@@ -1,4 +1,12 @@
-import { demoDashboard, demoDeals, demoListings } from './demoData'
+import {
+  createDemoDraft,
+  demoDashboard,
+  demoDeals,
+  demoListings,
+  getDemoNegotiation,
+  getDemoNegotiations,
+  sendDemoMessage
+} from './demoData'
 
 const API_PREFIX = import.meta.env.VITE_API_URL || '/api/v1'
 
@@ -41,6 +49,28 @@ export const getListing = (id) => {
 }
 
 export const getDeals = () => (DEMO_MODE ? delay(demoDeals) : api('/deals'))
+
+export const getNegotiations = () =>
+  DEMO_MODE ? delay(getDemoNegotiations()) : api('/negotiation')
+
+export const getNegotiation = (id) =>
+  DEMO_MODE ? delay(getDemoNegotiation(id)) : api(`/negotiation/${id}`)
+
+export const createDraft = (id, intent) =>
+  DEMO_MODE
+    ? delay(createDemoDraft(id, intent))
+    : api(`/negotiation/${id}/draft`, {
+      method: 'POST',
+      body: JSON.stringify(intent ? { intent } : {})
+    })
+
+export const sendMessage = (id, body) =>
+  DEMO_MODE
+    ? delay(sendDemoMessage(id, body))
+    : api(`/negotiation/${id}/message`, {
+      method: 'POST',
+      body: JSON.stringify({ body })
+    })
 
 export const login = (email, password) => {
   if (DEMO_MODE) return delay({ access_token: 'demo-token', token_type: 'bearer' })

@@ -4,6 +4,7 @@ import { DEMO_MODE } from '../api/client'
 const navigation = [
   ['/', 'Обзор'],
   ['/listings', 'Участки'],
+  ['/negotiations', 'Переговоры'],
   ['/deals', 'Сделки']
 ]
 
