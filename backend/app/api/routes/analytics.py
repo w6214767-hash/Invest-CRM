@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 from sqlmodel import select
 
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.models import Deal, DealStage, Listing
 from app.schemas import DashboardMetrics
 
@@ -11,7 +11,9 @@ router = APIRouter(prefix="/analytics", tags=["Аналитика"])
 
 
 @router.get("/dashboard", response_model=DashboardMetrics)
-def dashboard_metrics(session: SessionDep) -> DashboardMetrics:
+def dashboard_metrics(
+    session: SessionDep, current_user: CurrentUser
+) -> DashboardMetrics:
     """Считает число лидов, конверсию, средний дисконт и активные сделки."""
     listings = list(session.exec(select(Listing)).all())
     deals = list(session.exec(select(Deal)).all())

@@ -13,8 +13,22 @@ const API_PREFIX = import.meta.env.VITE_API_URL || '/api/v1'
 /** Витринный режим: интерфейс работает на фикстурах, без обращения к backend. */
 export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === '1'
 
+/**
+ * Имитирует задержку сети демо-режима. `payload` может быть функцией —
+ * тогда она вызывается лениво внутри промиса, и синхронное исключение
+ * (например, отсутствие диалога в демо-данных) становится отклонённым
+ * промисом, а не необработанной ошибкой, которая роняет всё React-дерево.
+ */
 function delay(payload, ms = 180) {
-  return new Promise((resolve) => setTimeout(() => resolve(payload), ms))
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      try {
+        resolve(typeof payload === 'function' ? payload() : payload)
+      } catch (error) {
+        reject(error)
+      }
+    }, ms)
+  })
 }
 
 export async function api(path, options = {}) {
@@ -65,11 +79,11 @@ export const getNegotiations = () =>
   DEMO_MODE ? delay(getDemoNegotiations()) : api('/negotiation')
 
 export const getNegotiation = (id) =>
-  DEMO_MODE ? delay(getDemoNegotiation(id)) : api(`/negotiation/${id}`)
+  DEMO_MODE ? delay(() => getDemoNegotiation(id)) : api(`/negotiation/${id}`)
 
 export const createDraft = (id, intent) =>
   DEMO_MODE
-    ? delay(createDemoDraft(id, intent))
+    ? delay(() => createDemoDraft(id, intent))
     : api(`/negotiation/${id}/draft`, {
       method: 'POST',
       body: JSON.stringify(intent ? { intent } : {})
@@ -77,7 +91,7 @@ export const createDraft = (id, intent) =>
 
 export const sendMessage = (id, body) =>
   DEMO_MODE
-    ? delay(sendDemoMessage(id, body))
+    ? delay(() => sendDemoMessage(id, body))
     : api(`/negotiation/${id}/message`, {
       method: 'POST',
       body: JSON.stringify({ body })

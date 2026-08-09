@@ -3,6 +3,7 @@
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.api.routes.integrations import overview, run_search, update_profile
+from app.models import User
 from app.schemas.integrations import SearchProfilePayload
 
 
@@ -12,9 +13,20 @@ def session() -> Session:
     return Session(engine)
 
 
+def fake_user() -> User:
+    """Пользователь для прямых вызовов маршрутов в обход HTTP-слоя FastAPI."""
+    return User(
+        id=1,
+        email="manager@test.local",
+        full_name="Тестовый менеджер",
+        password_hash="x",
+    )
+
+
 def test_profile_is_created_and_updated() -> None:
     with session() as db:
-        initial = overview(db)
+        user = fake_user()
+        initial = overview(db, user)
         assert initial.profile.name == "Юг Московской области"
         updated = update_profile(
             SearchProfilePayload(
@@ -29,6 +41,7 @@ def test_profile_is_created_and_updated() -> None:
                 exclude_words=[],
             ),
             db,
+            user,
         )
         assert updated.name == "Новый профиль"
         assert updated.districts == ["Чехов"]
@@ -36,8 +49,9 @@ def test_profile_is_created_and_updated() -> None:
 
 def test_run_is_written_to_audit() -> None:
     with session() as db:
-        result = run_search(db)
+        user = fake_user()
+        result = run_search(db, user)
         assert result.run_id > 0
-        data = overview(db)
+        data = overview(db, user)
         assert data.metrics["runs"] == 1
         assert data.audit[0].action == "Профиль поиска обработан"

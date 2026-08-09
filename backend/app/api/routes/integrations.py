@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter
 from sqlmodel import select
 
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.core.config import settings
 from app.models import IntegrationRun, Listing, SearchProfile
 from app.schemas.integrations import (
@@ -60,7 +60,7 @@ def source_statuses() -> list[IntegrationSourceRead]:
 
 
 @router.get("/overview", response_model=IntegrationOverview)
-def overview(session: SessionDep) -> IntegrationOverview:
+def overview(session: SessionDep, current_user: CurrentUser) -> IntegrationOverview:
     profile = get_or_create_profile(session)
     listings = list(session.exec(select(Listing)).all())
     review = [item for item in listings if item.red_flags or not item.cadastral_number]
@@ -107,7 +107,9 @@ def overview(session: SessionDep) -> IntegrationOverview:
 
 
 @router.put("/profile", response_model=SearchProfileRead)
-def update_profile(payload: SearchProfilePayload, session: SessionDep) -> SearchProfile:
+def update_profile(
+    payload: SearchProfilePayload, session: SessionDep, current_user: CurrentUser
+) -> SearchProfile:
     profile = get_or_create_profile(session)
     for key, value in payload.model_dump().items():
         setattr(profile, key, value)
@@ -119,7 +121,7 @@ def update_profile(payload: SearchProfilePayload, session: SessionDep) -> Search
 
 
 @router.post("/run", response_model=RunResult)
-def run_search(session: SessionDep) -> RunResult:
+def run_search(session: SessionDep, current_user: CurrentUser) -> RunResult:
     profile = get_or_create_profile(session)
     listings = list(session.exec(select(Listing)).all())
     matching = [

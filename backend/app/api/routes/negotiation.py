@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, status
 from sqlmodel import Session, select
 
-from app.api.deps import SessionDep
+from app.api.deps import CurrentUser, SessionDep
 from app.core.config import settings
 from app.models import (
     Chat,
@@ -156,7 +156,9 @@ def _draft_prompt(intent: str, listing: Listing) -> str:
 
 
 @router.get("", response_model=list[NegotiationListItem])
-def list_negotiations(session: SessionDep) -> list[NegotiationListItem]:
+def list_negotiations(
+    session: SessionDep, current_user: CurrentUser
+) -> list[NegotiationListItem]:
     """Возвращает активные переговоры, отсортированные по последнему сообщению."""
     listings = list(
         session.exec(
@@ -210,7 +212,9 @@ def list_negotiations(session: SessionDep) -> list[NegotiationListItem]:
 
 
 @router.get("/{listing_id}", response_model=NegotiationDetail)
-def get_negotiation(listing_id: int, session: SessionDep) -> NegotiationDetail:
+def get_negotiation(
+    listing_id: int, session: SessionDep, current_user: CurrentUser
+) -> NegotiationDetail:
     """Возвращает полный диалог, аудит и допустимые переходы участка."""
     listing = _get_listing_or_404(session, listing_id)
     seller = _get_seller(session, listing)
@@ -271,6 +275,7 @@ def get_negotiation(listing_id: int, session: SessionDep) -> NegotiationDetail:
 async def create_draft(
     listing_id: int,
     session: SessionDep,
+    current_user: CurrentUser,
     payload: NegotiationDraftRequest | None = None,
 ) -> NegotiationDraftResponse:
     """Генерирует черновик Hermes либо использует безопасный локальный шаблон."""
@@ -291,7 +296,10 @@ async def create_draft(
     status_code=status.HTTP_201_CREATED,
 )
 def send_message(
-    listing_id: int, payload: NegotiationMessageCreate, session: SessionDep
+    listing_id: int,
+    payload: NegotiationMessageCreate,
+    session: SessionDep,
+    current_user: CurrentUser,
 ) -> NegotiationMessageRead:
     """Сохраняет исходящее сообщение менеджера и при необходимости создаёт чат."""
     listing = _get_listing_or_404(session, listing_id)
@@ -327,7 +335,10 @@ def send_message(
 
 @router.post("/{listing_id}/action", response_model=NegotiationResult)
 def negotiation_action(
-    listing_id: int, payload: NegotiationAction, session: SessionDep
+    listing_id: int,
+    payload: NegotiationAction,
+    session: SessionDep,
+    current_user: CurrentUser,
 ) -> NegotiationResult:
     """Применяет событие к переговорам и записывает его в аудит."""
     listing = _get_listing_or_404(session, listing_id)

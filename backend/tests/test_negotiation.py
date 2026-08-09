@@ -10,7 +10,7 @@ from app.api.routes.negotiation import (
     get_negotiation,
     send_message,
 )
-from app.models import Chat, Listing, NegotiationStage
+from app.models import Chat, Listing, NegotiationStage, User
 from app.schemas import NegotiationDraftRequest, NegotiationMessageCreate
 from app.services.negotiation import (
     ALLOWED_TRANSITIONS,
@@ -46,6 +46,16 @@ def create_listing(session: Session, stage: NegotiationStage) -> Listing:
     session.commit()
     session.refresh(listing)
     return listing
+
+
+def fake_user() -> User:
+    """Пользователь для прямых вызовов маршрутов в обход HTTP-слоя FastAPI."""
+    return User(
+        id=1,
+        email="manager@test.local",
+        full_name="Тестовый менеджер",
+        password_hash="x",
+    )
 
 
 def test_happy_path_to_offer() -> None:
@@ -105,6 +115,7 @@ async def test_draft_without_hermes_returns_local_template(
     result = await create_draft(
         listing.id,
         session,
+        fake_user(),
         NegotiationDraftRequest(intent="facts"),
     )
     assert result.draft_message == SCRIPT_TEMPLATES["facts"]
@@ -114,7 +125,7 @@ async def test_draft_without_hermes_returns_local_template(
 def test_allowed_actions_match_state_machine(session: Session) -> None:
     """В ответе диалога доступны ровно переходы из общей стейт-машины."""
     listing = create_listing(session, NegotiationStage.QUALIFIED)
-    result = get_negotiation(listing.id, session)
+    result = get_negotiation(listing.id, session, fake_user())
     assert (
         set(result.allowed_next_actions)
         == ALLOWED_TRANSITIONS[listing.negotiation_stage]
@@ -128,6 +139,7 @@ def test_outgoing_message_creates_chat(session: Session) -> None:
         listing.id,
         NegotiationMessageCreate(body="Подскажите, участок ещё продаётся?"),
         session,
+        fake_user(),
     )
     chat = session.exec(select(Chat).where(Chat.listing_id == listing.id)).one()
     assert message.direction == "out"
