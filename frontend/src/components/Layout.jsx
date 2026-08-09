@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { DEMO_MODE } from '../api/client'
 
 const navigation = [
   ['/', 'Обзор'],
@@ -24,6 +25,7 @@ export default function Layout() {
           {navigation.map(([to, label]) => <NavLink key={to} to={to} end={to === '/'}>{label}</NavLink>)}
         </nav>
         <div className="sidebar-note">Домодедово · МО<br />Инвестиционные участки</div>
+        {DEMO_MODE && <div className="demo-badge">Демо-режим<br /><small>данные условные, backend не подключён</small></div>}
       </aside>
       <main className="content"><Outlet /></main>
     </div>

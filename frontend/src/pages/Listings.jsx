@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getListings } from '../api/client'
 import ScoreBadge from '../components/ScoreBadge'
 import Table from '../components/Table'
+import { label, negotiationStageLabels } from '../labels'
 
 export default function Listings() {
   const [listings, setListings] = useState([])
@@ -19,7 +20,7 @@ export default function Listings() {
       { key: 'area_sotka', label: 'Площадь', render: (item) => `${item.area_sotka} сот.` },
       { key: 'price_rub', label: 'Цена', render: (item) => `${Number(item.price_rub).toLocaleString('ru-RU')} ₽` },
       { key: 'discount_pct', label: 'Дисконт', render: (item) => item.discount_pct === null ? 'Не оценён' : `${item.discount_pct}%` },
-      { key: 'negotiation_stage', label: 'Переговоры', render: (item) => item.negotiation_stage },
+      { key: 'negotiation_stage', label: 'Переговоры', render: (item) => label(negotiationStageLabels, item.negotiation_stage) },
       { key: 'score', label: 'Балл', render: (item) => <ScoreBadge score={item.score} /> }
     ]} /></section>
   </section>

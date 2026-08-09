@@ -1,4 +1,13 @@
+import { demoDashboard, demoDeals, demoListings } from './demoData'
+
 const API_PREFIX = import.meta.env.VITE_API_URL || '/api/v1'
+
+/** Витринный режим: интерфейс работает на фикстурах, без обращения к backend. */
+export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === '1'
+
+function delay(payload, ms = 180) {
+  return new Promise((resolve) => setTimeout(() => resolve(payload), ms))
+}
 
 export async function api(path, options = {}) {
   const token = localStorage.getItem('yurzil_token')
@@ -18,11 +27,25 @@ export async function api(path, options = {}) {
   return response.json()
 }
 
-export const getDashboard = () => api('/analytics/dashboard')
-export const getListings = () => api('/listings')
-export const getListing = (id) => api(`/listings/${id}`)
-export const getDeals = () => api('/deals')
-export const login = (email, password) => api('/auth/login', {
-  method: 'POST',
-  body: JSON.stringify({ email, password })
-})
+export const getDashboard = () =>
+  DEMO_MODE ? delay(demoDashboard) : api('/analytics/dashboard')
+
+export const getListings = () =>
+  DEMO_MODE ? delay(demoListings) : api('/listings')
+
+export const getListing = (id) => {
+  if (!DEMO_MODE) return api(`/listings/${id}`)
+  const found = demoListings.find((item) => String(item.id) === String(id))
+  if (!found) return Promise.reject(new Error('Участок не найден в демо-данных'))
+  return delay(found)
+}
+
+export const getDeals = () => (DEMO_MODE ? delay(demoDeals) : api('/deals'))
+
+export const login = (email, password) => {
+  if (DEMO_MODE) return delay({ access_token: 'demo-token', token_type: 'bearer' })
+  return api('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password })
+  })
+}

@@ -24,6 +24,19 @@ Open-source скелет инвестиционной CRM для строите�
 
 Полное описание: [docs/architecture.md](docs/architecture.md). Модель данных: [docs/data-model.md](docs/data-model.md).
 
+## Посмотреть интерфейс без backend (демо-режим)
+
+Самый быстрый способ увидеть CRM — собрать фронтенд на демо-данных. База и API не нужны.
+
+```bash
+cd frontend
+npm install
+VITE_DEMO_MODE=1 npm run dev        # режим разработки на http://localhost:5173
+VITE_DEMO_MODE=1 npm run build      # статическая сборка в dist/
+```
+
+В демо-режиме данные берутся из `frontend/src/api/demoData.js`, маршрутизация переключается на hash-ссылки, а в боковой панели появляется плашка «Демо-режим». Без этой переменной фронтенд работает с реальным API.
+
 ## Быстрый старт локально
 
 ### Вариант 1: Docker
