@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     oidc_client_id: str = ""
     oidc_client_secret: str = ""
     oidc_roles_claim: str = "investscan_roles"
+    # Optional initial owner-only rollout using the same verified identity as HQ.
+    # Leave empty to keep the existing explicit module-role mode.
+    oidc_owner_subject: str = ""
+    oidc_required_amr: str = "mfa pwd otp"
     session_minutes: int = 60
     investscan_dev_auth: bool = False
     telegram_bot_token: str = ""

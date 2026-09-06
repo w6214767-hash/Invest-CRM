@@ -325,15 +325,18 @@ def test_invalid_filter_range_returns_validation_error(client):
 
 
 @pytest.mark.parametrize(
-    "roles,audience,expected",
+    "roles,audience,expected,owner_subject,amr",
     [
-        (["analyst"], "investscan-test", 303),
-        ([], "investscan-test", 403),
-        (["owner"], "wrong-client", 303),
+        (["analyst"], "investscan-test", 303, "", []),
+        ([], "investscan-test", 403, "", []),
+        (["owner"], "wrong-client", 303, "", []),
+        ([], "investscan-test", 303, "user-42", ["pwd", "otp", "mfa"]),
+        (["owner"], "investscan-test", 403, "user-42", ["pwd"]),
+        (["owner"], "investscan-test", 403, "other", ["pwd", "otp", "mfa"]),
     ],
 )
 def test_oidc_code_pkce_signed_token_and_module_roles(
-    client, monkeypatch, roles, audience, expected
+    client, monkeypatch, roles, audience, expected, owner_subject, amr
 ):
     """Exercise Authlib against a local in-process provider, including real RSA signatures."""
     import base64
@@ -387,6 +390,7 @@ def test_oidc_code_pkce_signed_token_and_module_roles(
                 "nonce": flow["nonce"],
                 "name": "SSO test",
                 "investscan_roles": roles,
+                "amr": amr,
             }
             signed = jwt.encode(
                 {"alg": "RS256", "kid": "test-key"}, claims, key
@@ -414,6 +418,7 @@ def test_oidc_code_pkce_signed_token_and_module_roles(
         },
     )
     monkeypatch.setattr(auth, "oauth", registry)
+    monkeypatch.setattr(settings, "oidc_owner_subject", owner_subject)
     monkeypatch.setattr(settings, "oidc_issuer", issuer)
     monkeypatch.setattr(settings, "oidc_client_id", "investscan-test")
     monkeypatch.setattr(settings, "oidc_client_secret", "test-only-secret")
@@ -435,9 +440,11 @@ def test_oidc_code_pkce_signed_token_and_module_roles(
     if audience == "wrong-client":
         assert callback.headers["location"] == "/login?error=sso"
         assert client.get(PREFIX + "/auth/me").status_code == 401
-    elif roles:
+    elif expected == 303:
         assert callback.headers["location"] == "/objects/42"
-        assert client.get(PREFIX + "/auth/me").json()["role"] == "analyst"
+        assert client.get(PREFIX + "/auth/me").json()["role"] == (
+            "owner" if owner_subject else "analyst"
+        )
         # The OAuth state cannot be replayed to create a second session.
         replay = client.get(
             PREFIX + "/auth/callback",
@@ -484,3 +491,31 @@ def test_russian_search_is_case_insensitive(client):
         client.get(PREFIX + "/objects?q=участок&district=домодедово").json()["total"]
         == 1
     )
+
+
+@pytest.mark.parametrize(
+    "subject,amr,roles,expected",
+    [
+        ("user-42", ["pwd", "otp", "mfa"], [], "owner"),
+        ("user-42", ["pwd"], ["owner"], None),
+        ("other-user", ["pwd", "otp", "mfa"], ["owner"], None),
+        ("user-42", "mfa pwd otp", ["owner"], None),
+        ("user-42", ["pwd", "otp", ["mfa"]], [], None),
+    ],
+)
+def test_hq_owner_binding_requires_subject_and_mfa(
+    monkeypatch, subject, amr, roles, expected
+):
+    monkeypatch.setattr(settings, "oidc_owner_subject", "user-42")
+    monkeypatch.setattr(settings, "oidc_required_amr", "mfa pwd otp")
+    from app.investscan import auth
+
+    assert (
+        auth.claims_role({"sub": subject, "amr": amr, "investscan_roles": roles})
+        == expected
+    )
+
+
+def test_hq_owner_binding_rejects_existing_different_identity(client, monkeypatch):
+    monkeypatch.setattr(settings, "oidc_owner_subject", "different-subject")
+    assert client.get(PREFIX + "/objects").status_code == 403

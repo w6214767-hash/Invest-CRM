@@ -58,6 +58,25 @@ def safe_next(value: str) -> str:
     return value
 
 
+def claims_role(claims):
+    if settings.oidc_owner_subject:
+        required = set(settings.oidc_required_amr.split())
+        amr = claims.get("amr")
+        if not {"mfa", "pwd", "otp"}.issubset(required):
+            return None
+        if (
+            claims.get("sub") != settings.oidc_owner_subject
+            or not isinstance(amr, list)
+            or not all(isinstance(value, str) for value in amr)
+            or not required.issubset(amr)
+        ):
+            return None
+        return "owner"
+    roles = claims.get(settings.oidc_roles_claim, [])
+    roles = roles if isinstance(roles, list) else []
+    return next((r for r in ("owner", "analyst", "viewer") if r in roles), None)
+
+
 def current_identity(request: Request, session: SessionDep) -> Identity:
     token = request.cookies.get(COOKIE, "")
     record = session.get(LoginSession, token_hash(token)) if token else None
@@ -70,6 +89,12 @@ def current_identity(request: Request, session: SessionDep) -> Identity:
         or identity.role not in {"owner", "analyst", "viewer"}
     ):
         raise HTTPException(403, "Доступ к ИнвестСкану закрыт")
+    if settings.oidc_owner_subject and (
+        identity.issuer != settings.oidc_issuer
+        or identity.subject != settings.oidc_owner_subject
+        or identity.role != "owner"
+    ):
+        raise HTTPException(403, "Доступ разрешён только собственнику Штаба")
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         supplied = request.headers.get("X-CSRF-Token", "")
         if not secrets.compare_digest(supplied, record.csrf_token):
@@ -153,9 +178,7 @@ async def callback(request: Request, session: SessionDep):
         return RedirectResponse("/login?error=sso", status_code=303)
     if claims.get("iss") != settings.oidc_issuer or not claims.get("sub"):
         raise HTTPException(403, "Неверный источник учётной записи")
-    roles = claims.get(settings.oidc_roles_claim, [])
-    roles = roles if isinstance(roles, list) else []
-    role = next((r for r in ("owner", "analyst", "viewer") if r in roles), None)
+    role = claims_role(claims)
     identity = session.exec(
         select(Identity).where(
             Identity.issuer == claims["iss"], Identity.subject == claims["sub"]
@@ -170,7 +193,9 @@ async def callback(request: Request, session: SessionDep):
             )
             session.commit()
         request.session.clear()
-        raise HTTPException(403, "В учётной записи нет роли ИнвестСкана")
+        raise HTTPException(
+            403, "Учётная запись или второй фактор не разрешены для ИнвестСкана"
+        )
     if not identity:
         identity = Identity(
             issuer=claims["iss"],
