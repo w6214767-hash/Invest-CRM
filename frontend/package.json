@@ -1,20 +1,23 @@
 {
-  "name": "invest-crm-frontend",
+  "name": "investscan-frontend",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "leaflet": "^1.9.4",
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "latest"
   },
   "devDependencies": {
+    "prettier": "^3.6.2",
     "vite": "latest"
   }
 }

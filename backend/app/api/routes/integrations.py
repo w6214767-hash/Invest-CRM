@@ -50,12 +50,6 @@ def source_statuses() -> list[IntegrationSourceRead]:
         IntegrationSourceRead(
             id="yandex", name="Яндекс Недвижимость", status="setup", configured=False
         ),
-        IntegrationSourceRead(
-            id="bitrix24",
-            name="Bitrix24",
-            status="online" if settings.bitrix24_webhook_url else "setup",
-            configured=bool(settings.bitrix24_webhook_url),
-        ),
     ]
 
 

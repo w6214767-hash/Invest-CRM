@@ -1,0 +1,1 @@
+"""InvestScan standalone application domain."""

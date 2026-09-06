@@ -41,3 +41,5 @@ __all__ = [
     "User",
     "Valuation",
 ]
+
+from app.models import investscan as investscan_models  # noqa: F401,E402

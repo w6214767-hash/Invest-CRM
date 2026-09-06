@@ -37,4 +37,33 @@ jobs:
         with:
           node-version: 22
       - name: Сборка интерфейса
-        run: npm install && npm run build
+        run: npm ci && npm test && npm run build
+
+  isolated-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Подготовить изолированную конфигурацию проверки
+        run: |
+          cat > .env <<'ENV'
+          ENVIRONMENT=production
+          APP_URL=https://invest.example.test
+          SECRET_KEY=isolated-ci-only-secret-not-for-use-in-any-deployment-2026
+          POSTGRES_PASSWORD=isolated_ci_only_database_password
+          INVESTSCAN_DEV_AUTH=false
+          INVESTSCAN_RELEASE_SHA=${{ github.sha }}
+          ENV
+      - name: Собрать и проверить PostgreSQL, миграции и закрытый API
+        run: |
+          docker compose --env-file .env -f deploy/investscan/compose.yml up -d --build --wait --wait-timeout 180
+          curl --fail --retry 5 --retry-connrefused http://127.0.0.1:8093/ready
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8093/api/v1/investscan/objects)" = 401
+          test "$(curl -fsS http://127.0.0.1:8093/health | jq -r .release)" = "$GITHUB_SHA"
+          bash scripts/backup-investscan.sh
+          bash scripts/restore-check-investscan.sh "$(ls backups/*.dump)"
+      - name: Журналы изолированной проверки
+        if: failure()
+        run: docker compose --env-file .env -f deploy/investscan/compose.yml logs --tail 80
+      - name: Удалить только тестовый стек runner
+        if: always()
+        run: docker compose --env-file .env -f deploy/investscan/compose.yml down -v
