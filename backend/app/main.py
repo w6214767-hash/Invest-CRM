@@ -71,6 +71,7 @@ def health() -> dict[str, str]:
         "status": "ok",
         "service": "investscan",
         "environment": settings.environment,
+        "release": settings.investscan_release_sha,
     }
 
 

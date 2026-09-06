@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     environment: str = "development"
     project_name: str = "ИнвестСкан"
+    investscan_release_sha: str = "unverified"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite:///./yurzil_crm.db"
     secret_key: str = "локальный-небоевой-секрет-замените-его"
