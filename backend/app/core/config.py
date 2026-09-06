@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     )
 
     environment: str = "development"
-    project_name: str = "Invest-CRM"
+    project_name: str = "ИнвестСкан"
     api_v1_prefix: str = "/api/v1"
     database_url: str = "sqlite:///./yurzil_crm.db"
     secret_key: str = "локальный-небоевой-секрет-замените-его"
@@ -23,7 +23,14 @@ class Settings(BaseSettings):
 
     avito_client_id: str = ""
     avito_client_secret: str = ""
-    bitrix24_webhook_url: str = ""
+    app_url: str = "http://localhost:5173"
+    shtab_url: str = "https://shtab.ugsdom.ru/#platform"
+    oidc_issuer: str = ""
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    oidc_roles_claim: str = "investscan_roles"
+    session_minutes: int = 60
+    investscan_dev_auth: bool = False
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     hermes_api_url: str = ""

@@ -37,4 +37,4 @@ jobs:
         with:
           node-version: 22
       - name: Сборка интерфейса
-        run: npm install && npm run build
+        run: npm ci && npm test && npm run build

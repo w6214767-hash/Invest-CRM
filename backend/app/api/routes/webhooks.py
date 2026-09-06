@@ -1,4 +1,4 @@
-"""Входящие вебхуки Авито и Bitrix24 с безопасным журналированием."""
+"""Входящие вебхуки Авито с безопасным журналированием."""
 
 from typing import Any
 
@@ -19,15 +19,4 @@ async def avito_webhook(request: Request) -> dict[str, Any]:
         "accepted": True,
         "source": "avito",
         "event_type": payload.get("type", "unknown"),
-    }
-
-
-@router.post("/bitrix24")
-async def bitrix24_webhook(request: Request) -> dict[str, Any]:
-    """Принимает уведомление Bitrix24 и подтверждает его обработку."""
-    payload = await request.form()
-    return {
-        "accepted": True,
-        "source": "bitrix24",
-        "event_type": payload.get("event", "unknown"),
     }

@@ -1,0 +1,81 @@
+name: investscan
+
+x-api: &api
+  build:
+    context: ../../backend
+  env_file: ../../.env
+  environment:
+    ENVIRONMENT: production
+    INVESTSCAN_DEV_AUTH: 'false'
+    DATABASE_URL: postgresql+psycopg://investscan:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/investscan
+  restart: unless-stopped
+  mem_limit: 768m
+  security_opt:
+    - no-new-privileges:true
+  networks: [private]
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: investscan
+      POSTGRES_USER: investscan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U investscan -d investscan']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    mem_limit: 1g
+    networks: [private]
+
+  migrate:
+    <<: *api
+    restart: 'no'
+    command: ['alembic', 'upgrade', 'head']
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    <<: *api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'python', '-c', "import urllib.request; urllib.request.urlopen('http://localhost:8000/ready', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../../frontend
+    restart: unless-stopped
+    mem_limit: 128m
+    networks: [private]
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    # The existing VPS reverse proxy terminates TLS and forwards to this local port.
+    ports:
+      - '127.0.0.1:${INVESTSCAN_PORT:-8093}:80'
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    mem_limit: 128m
+    networks: [private]
+
+volumes:
+  postgres:
+networks:
+  private:
