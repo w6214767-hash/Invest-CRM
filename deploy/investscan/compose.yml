@@ -7,6 +7,8 @@ x-api: &api
   environment:
     ENVIRONMENT: production
     INVESTSCAN_DEV_AUTH: 'false'
+    # Temporary owner-requested pause; set false to restore MFA.
+    OIDC_MFA_SUSPENDED: ${OIDC_MFA_SUSPENDED:-true}
     DATABASE_URL: postgresql+psycopg://investscan:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/investscan
   restart: unless-stopped
   mem_limit: 768m

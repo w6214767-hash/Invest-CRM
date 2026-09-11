@@ -519,3 +519,26 @@ def test_hq_owner_binding_requires_subject_and_mfa(
 def test_hq_owner_binding_rejects_existing_different_identity(client, monkeypatch):
     monkeypatch.setattr(settings, "oidc_owner_subject", "different-subject")
     assert client.get(PREFIX + "/objects").status_code == 403
+
+
+def test_owner_mfa_pause_preserves_identity_boundary(monkeypatch):
+    from app.investscan import auth
+
+    monkeypatch.setattr(settings, "oidc_owner_subject", "user-42")
+    monkeypatch.setattr(settings, "oidc_mfa_suspended", True)
+    assert auth.claims_role({"sub": "user-42", "amr": ["pwd"]}) == "owner"
+    assert auth.claims_role({"sub": "other", "amr": ["pwd"]}) is None
+    assert auth.claims_role({"sub": "user-42", "amr": []}) is None
+    assert auth.claims_role({"sub": "user-42", "amr": "pwd"}) is None
+    paused_hash = auth.token_hash("opaque-test-token")
+    monkeypatch.setattr(settings, "oidc_mfa_suspended", False)
+    assert auth.token_hash("opaque-test-token") != paused_hash
+    assert auth.claims_role({"sub": "user-42", "amr": ["pwd"]}) is None
+
+
+def test_restoring_mfa_rejects_paused_session(client, monkeypatch):
+    monkeypatch.setattr(settings, "oidc_mfa_suspended", True)
+    assert client.post(PREFIX + "/auth/development").status_code == 204
+    assert client.get(PREFIX + "/auth/me").status_code == 200
+    monkeypatch.setattr(settings, "oidc_mfa_suspended", False)
+    assert client.get(PREFIX + "/auth/me").status_code == 401

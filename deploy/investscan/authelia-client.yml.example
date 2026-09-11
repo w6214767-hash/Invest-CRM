@@ -1,11 +1,12 @@
 # Merge this client into the EXISTING provider config; do not replace it.
 # Render secrets on the server and validate with the installed Authelia version.
-# The module separately enforces exact OIDC_OWNER_SUBJECT + mfa/pwd/otp.
+# Reuse HQ owner_only policy: deny by default, user:vladimir only.
+# The module also requires exact OIDC_OWNER_SUBJECT and the configured AMR mode.
 client_id: investscan
 client_name: Юржилсервис ИнвестСкан
 client_secret: REPLACE_WITH_AUTHELIA_HASH_OF_SEPARATE_CLIENT_SECRET
 public: false
-authorization_policy: two_factor
+authorization_policy: owner_only
 require_pkce: true
 pkce_challenge_method: S256
 redirect_uris:
