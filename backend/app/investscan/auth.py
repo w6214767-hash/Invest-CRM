@@ -67,7 +67,9 @@ def claims_role(claims):
             else set(settings.oidc_required_amr.split())
         )
         amr = claims.get("amr")
-        if not settings.oidc_mfa_suspended and not {"mfa", "pwd", "otp"}.issubset(required):
+        if not settings.oidc_mfa_suspended and not {"mfa", "pwd", "otp"}.issubset(
+            required
+        ):
             return None
         if (
             claims.get("sub") != settings.oidc_owner_subject
