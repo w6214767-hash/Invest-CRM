@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     # Leave empty to keep the existing explicit module-role mode.
     oidc_owner_subject: str = ""
     oidc_required_amr: str = "mfa pwd otp"
+    oidc_mfa_suspended: bool = False
     session_minutes: int = 60
     investscan_dev_auth: bool = False
     telegram_bot_token: str = ""

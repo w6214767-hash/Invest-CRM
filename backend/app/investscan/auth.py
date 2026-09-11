@@ -41,7 +41,8 @@ def local_auth():
 
 
 def token_hash(token):
-    return hashlib.sha256(token.encode()).hexdigest()
+    prefix = "mfa-suspended:" if settings.oidc_mfa_suspended else ""
+    return hashlib.sha256((prefix + token).encode()).hexdigest()
 
 
 def safe_next(value: str) -> str:
@@ -60,9 +61,13 @@ def safe_next(value: str) -> str:
 
 def claims_role(claims):
     if settings.oidc_owner_subject:
-        required = set(settings.oidc_required_amr.split())
+        required = (
+            {"pwd"}
+            if settings.oidc_mfa_suspended
+            else set(settings.oidc_required_amr.split())
+        )
         amr = claims.get("amr")
-        if not {"mfa", "pwd", "otp"}.issubset(required):
+        if not settings.oidc_mfa_suspended and not {"mfa", "pwd", "otp"}.issubset(required):
             return None
         if (
             claims.get("sub") != settings.oidc_owner_subject
